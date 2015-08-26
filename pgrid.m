@@ -45,8 +45,8 @@ vals = setargs(def, varargin);
 if nargin < 2, mfile_showhelp; fprintf('\t| - VARARGIN DEFAULTS - |\n'); disp(vals); return; end
 if isempty(relwidth), relwidth      = ones(1, ncol); end
 if isempty(relheight), relheight    = ones(1, nrow); end
-if length(relwidth)~=ncol, printmsg('Length of RELWIDTH must equal NCOL. Try again!'); end
-if length(relheight)~=nrow, printmsg('Length of RELHEIGHT must equal NROW. Try again!'); end
+if length(relwidth)~=ncol, printmsg('Length of RELWIDTH must equal NCOL. Try again!'); hpanel = []; hidx = []; return; end
+if length(relheight)~=nrow, printmsg('Length of RELHEIGHT must equal NROW. Try again!'); hpanel = []; hidx = []; return; end
 pos     = getpositions(relwidth, relheight, marginsep, panelsep);
 hidx    = pos(:,1:2);
 hpos    = pos(:,3:end);
@@ -56,7 +56,7 @@ for i = 1:npanel
     hpanel(i)  =  uipanel( ...
                    'Units'   ,     'normalized'                           ,...
                   'Parent'   ,     parent                                 ,...
-                     'Tag'   ,     sprintf('pgrid: %dx%d', hidx(i,:))     ,...
+                     'Tag'   ,     sprintf('[%d]x[%d]', hidx(i,:))      ,...
                    'Title'   ,     ''                                     ,...
            'TitlePosition'   ,     'centertop'                            ,...
                 'Position'   ,     hpos(i,:)                              ,...
@@ -79,21 +79,23 @@ for i = 1:npanel
     drawnow; 
 end
 set(hpanel, 'visible', 'on');
+drawnow; 
 end
 % ========================================================================================
 %
 % ------------------------------------- SUBFUNCTIONS -------------------------------------
 %
 % ========================================================================================
-function pos = getpositions(relwidth, relheight, marginsep, uicontrolsep)
+function pos = getpositions(relwidth, relheight, marginsep, uicontrolsep, top2bottomidx)
 if nargin<2, relheight = [6 7]; end
 if nargin<3, marginsep = .025; end
 if nargin<4, uicontrolsep = .01; end
+if nargin<5, top2bottomidx = 1; end
 if size(relheight,1) > 1, relheight = relheight'; end
 if size(relwidth, 1) > 1, relwidth = relwidth'; end
-
-ncol = length(relwidth);
-nrow = length(relheight); 
+ncol        = length(relwidth);
+nrow        = length(relheight); 
+if top2bottomidx, relheight = relheight(end:-1:1); end
 
 % width
 rowwidth    = 1-(marginsep*2)-(uicontrolsep*(ncol-1));  
@@ -106,23 +108,18 @@ colheight   = 1-(marginsep*2)-(uicontrolsep*(nrow-1));
 uiheights   = (relheight/sum(relheight))*colheight;
 allsep      = [marginsep repmat(uicontrolsep, 1, nrow-1)];
 uibottoms   = ([0 cumsum(uiheights(1:end-1))]) + cumsum(allsep);
+if top2bottomidx, uiheights = uiheights(end:-1:1); end
+if top2bottomidx, uibottoms = uibottoms(end:-1:1); end
 
 % combine
-pos = zeros(ncol, 4, nrow);
-pos(:,1,:)  = repmat(uilefts', 1, nrow); 
-pos(:,2,:)  = repmat(uibottoms, ncol, 1);
-pos(:,3,:)  = repmat(uiwidths', 1, nrow);
-pos(:,4,:)  = repmat(uiheights, ncol, 1);
-
-% test
 pos = zeros(ncol*nrow, 6);
-pos(:,1) = reshape(repmat(1:nrow, ncol, 1), size(pos,1), 1);
+pos(:,1) = reshape(repmat(nrow:-1:1, ncol, 1), size(pos,1), 1);
 pos(:,2) = reshape(repmat(1:ncol, 1, nrow), size(pos,1), 1);
 pos(:,3) = uilefts(pos(:,2)); 
 pos(:,4) = uibottoms(pos(:,1)); 
 pos(:,5) = uiwidths(pos(:,2)); 
-pos(:,6) = uiheights(pos(:,1)); 
-
+pos(:,6) = uiheights(pos(:,1));
+pos      = sortrows(pos, 1);
 end
 function mfile_showhelp(varargin)
 % MFILE_SHOWHELP
