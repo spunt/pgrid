@@ -1,5 +1,5 @@
 function shpanel = psplit(hpanel, grididx, vertical, panelsep)
-% PSPLIT Utility for merging cells in a uipanel array created by PGRID
+% PSPLIT Utility for splitting cells in a uipanel array created by PGRID
 %
 %  USAGE: shpanel = psplit(hpanel, grididx, vertical, panelsep)
 %
