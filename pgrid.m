@@ -1,28 +1,28 @@
-function [hpanel, hidx] = pgrid(nrow, ncol, varargin)
+function [phandle, pidx] = pgrid(nrow, ncol, varargin)
 % PGRID Create a grid of of UIPANELs
 %
-%  USAGE: [h, hidx] = pgrid(griddim, varargin)
+%  USAGE: [phandle, pidx] = pgrid(nrow, ncol, varargin)
 %
 %  OUTPUT
-%	hpanel: array of handles to uipanels comprising the grid
+%   hpanel: array of handles to uipanels comprising the grid
 %   hidx:   [row,col] indices for the returned uipanel handles
 % ________________________________________________________________________________________
 %  INPUTS
-%	nrow:   number of rows in grid
+%   nrow:   number of rows in grid
 %   ncol:   number of cols in grid
 % ________________________________________________________________________________________
 %  VARARGIN
 % | NAME            | DEFAULT       | DESCRIPTION 
 % |-----------------|---------------|-----------------------------------------------------
-% | parent          | gcf           | the grids parent object           
-% | relwidth        | ones(1, ncol) | relative width of cols (arbitrary units)            
+% | parent          | gcf           | parent object for grid 
+% | relwidth        | ones(1, ncol) | relative width of columns (arbitrary units)            
 % | relheight       | ones(1, nrow) | relative height of rows (arbitrary units)            
-% | marginsep       | 0.0100        | separation from parent boundaries (normalized units)           
-% | panelsep        | 0.0100        | separation between panels (normalized units)            
+% | marginsep       | 0.0100        | size of margin surrounding grid (normalized units)           
+% | panelsep        | 0.0100        | size of space between panels (normalized units)            
 % | backgroundcolor | [.08 .09 .09] | uipanel background color             
 % | foregroundcolor | [.97 .97 .97] | uipanel foreground color
-% | bordertype      | 'none'        | uipanel border type            
-% | borderwidth     | 1             | uipanel border width (unused if border type is none
+% | bordertype      | 'none'        | etchedin, etchedout, beveledin, beveledout, line 
+% | borderwidth     | 1             | uipanel border width in pixels
 % ________________________________________________________________________________________
 %
 
@@ -30,8 +30,10 @@ function [hpanel, hidx] = pgrid(nrow, ncol, varargin)
 %	Created:  2015-08-23
 %	Email:     spunt@caltech.edu
 % ________________________________________________________________________________________
+
+% | Defaults for VARARGIN
 def = { ...
-'parent',              gcf                                  ,...
+'parent',              []                                   ,...
 'relwidth',            []                                   ,...
 'relheight',		   []                                   ,...
 'marginsep',          .01                                   ,...
@@ -41,45 +43,46 @@ def = { ...
 'bordertype',         'none'                                ,...
 'borderwidth',         1                                     ...
 };
+
+% | Update values for VARARGIN where necessary
 vals = setargs(def, varargin);
-if nargin < 2, mfile_showhelp; fprintf('\t| - VARARGIN DEFAULTS - |\n'); disp(vals); return; end
+
+% | Check arguments
+if nargin < 2, mfile_showhelp; return; end
+if isempty(parent), parent          = gcf; end
 if isempty(relwidth), relwidth      = ones(1, ncol); end
 if isempty(relheight), relheight    = ones(1, nrow); end
-if length(relwidth)~=ncol, printmsg('Length of RELWIDTH must equal NCOL. Try again!'); hpanel = []; hidx = []; return; end
-if length(relheight)~=nrow, printmsg('Length of RELHEIGHT must equal NROW. Try again!'); hpanel = []; hidx = []; return; end
-pos     = getpositions(relwidth, relheight, marginsep, panelsep);
-hidx    = pos(:,1:2);
-hpos    = pos(:,3:end);
-npanel  = size(hpos, 1);
-hpanel  = gobjects(npanel, 1);
+if length(relwidth)~=ncol, printmsg('Length of RELWIDTH must equal NCOL. Try again!'); phandle = []; pidx = []; return; end
+if length(relheight)~=nrow, printmsg('Length of RELHEIGHT must equal NROW. Try again!'); phandle = []; pidx = []; return; end
+
+% | Get normalized positions for each panel 
+pos         = getpositions(relwidth, relheight, marginsep, panelsep);
+pidx        = pos(:,1:2);
+hpos        = pos(:,3:end);
+
+% | pgrid loop
+npanel      = size(hpos, 1);
+phandle     = gobjects(npanel, 1);
 for i = 1:npanel
-    hpanel(i)  =  uipanel( ...
-                   'Units'   ,     'normalized'                           ,...
+    phandle(i)  =  uipanel( ...
                   'Parent'   ,     parent                                 ,...
-                     'Tag'   ,     sprintf('[%d]x[%d]', hidx(i,:))      ,...
+                   'Units'   ,     'normalized'                           ,...
+                     'Tag'   ,     sprintf('[%d] x [%d]', pidx(i,:))        ,...
                    'Title'   ,     ''                                     ,...
            'TitlePosition'   ,     'centertop'                            ,...
                 'Position'   ,     hpos(i,:)                              ,...
          'BackgroundColor'   ,     backgroundcolor                        ,...
          'ForegroundColor'   ,     foregroundcolor                        ,...
               'BorderType'   ,     bordertype                             ,...
-             'BorderWidth'   ,     borderwidth                             ,...
-               'FontAngle'   ,     'normal'                               ,...
-                'FontName'   ,     'arial'                                ,...
-                'FontSize'   ,     12                                      ,...
-               'FontUnits'   ,     'points'                               ,...
-              'FontWeight'   ,     'bold'                                 ,...
-          'HighlightColor'   ,     [1 1 1]                                ,...
-             'ShadowColor'   ,     [0.7000 0.7000 0.7000]                 ,...
-          'SizeChangedFcn'   ,     ''                                     ,...
-           'UIContextMenu'   ,     []                                     ,...
-                'UserData'   ,     []                                     ,...
-                 'Visible'   ,     'off'                                    ...
+             'BorderWidth'   ,     borderwidth                            ,...
+                'UserData'   ,     pidx(i,:)                              ,...
+                 'Visible'   ,     'off'                                   ...
                             );
-    drawnow; 
 end
-set(hpanel, 'visible', 'on');
-drawnow; 
+
+% | Make Visible
+for i = 1:npanel, set(phandle(i), 'visible', 'on'); drawnow; end
+
 end
 % ========================================================================================
 %

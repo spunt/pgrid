@@ -1,21 +1,29 @@
 function mhpanel = pmerge(hpanel, grididx)
-
-    if nargin < 2, error('USAGE: [mhgrid, mgrididx] = pmerge(hgrid, grididx)'); end
+% PMERGE Utility for merging cells in a uipanel array created by PGRID
+%
+%  USAGE: mhpanel = pmerge(hpanel, grididx)
+%
+%  INPUT
+%   hpanel:     array of handles to uipanel grid (output from PGRID)
+%   grididx:    indices to the uipanels to merge
+% ________________________________________________________________________________________
+%
+    if nargin < 2, disp('USAGE: mhpanel = pmerge(hgrid, grididx)'); return; end
     p       = hpanel(grididx);
-    ptag    = get(p, 'Tag');
-
+    pidx    = cell2mat(get(p, 'UserData'));
 
     % | GET DIMENSIONS 
-    hpos    = cell2mat(get(hpanel, 'pos'));
     ppos    = cell2mat(get(p, 'pos'));
-    ncell   = length(grididx); 
-    nrow    = length(unique(ppos(:,2)));
-    ncol    = length(unique(ppos(:,1)));
+    ncell   = length(grididx);
+    urow    = unique(pidx(:,1));
+    ucol    = unique(pidx(:,2)); 
+    nrow    = length(urow);
+    ncol    = length(ucol);
 
     % | CHECK VALIDITY
     if all([nrow>1, ncol>1, mod(ncell, 2)]), error('Invalid grid indices!'); end
-    rowidx  = find(ismember(hpos(:,2), ppos(:,2)));
-    colidx  = find(ismember(hpos(:,1), ppos(:,1)));
+    rowidx  = unique(pidx(:,1));
+    colidx  = unique(pidx(:,2)); 
     if any(diff(rowidx)>1), error('Invalid row indices!'); end
     if any(diff(colidx)>1), error('Invalid column indices'); end
     
@@ -28,48 +36,27 @@ function mhpanel = pmerge(hpanel, grididx)
     h       = max(ptop) - min(pbottom); 
     
     % | DELETE OLD, CREATE NEW
-    pidx    = regexpi(ptag, 'x', 'split');
-    ptagidx = cell2num(vertcat(pidx{:}));
-    urowtag = unique(ptagidx(:,1));
-    ucoltag = unique(ptagidx(:,2)); 
+    urowtag = unique(pidx(:,1));
+    ucoltag = unique(pidx(:,2)); 
     if nrow > 1
-        rowtag = sprintf('%d:%d', urowtag);
+        rowtag = sprintf('%d:%d', urowtag(1), urowtag(end));
     else
         rowtag = sprintf('%d', urowtag); 
     end
     if ncol > 1
-        coltag = sprintf('%d:%d', ucoltag); 
+        coltag = sprintf('%d:%d', ucoltag(1), ucoltag(end)); 
     else
         coltag = sprintf('%d', ucoltag); 
     end
-    mtag = sprintf('[%s]x[%s]', rowtag, coltag); 
+    
+    mtag    = sprintf('[%s] x [%s]', rowtag, coltag);
+    userd   = {eval(rowtag) eval(coltag)};
     mhgrid  = p(1);
     delete(p(2:end));
     mpos    = [min(ppos(:,1:2)) w h];
-    set(mhgrid, 'position', mpos, 'tag', mtag);
+    set(mhgrid, 'position', mpos, 'tag', mtag, 'userdata', userd);
     drawnow; 
     mhpanel = hpanel;
     mhpanel(grididx(2:end)) = [];
 
-end
-function out = cell2num(in)
-% CELL2NUM Convert cell array of strings naming numbers, or a 
-% cell array of numbers, to a numeric array, with empty cells replaced
-% with NaN
-%
-%       USAGE: out = cell2num(in)
-%           
-% -------------------------------------------------------------------
-if nargin<1, error('USAGE: out = cell2num(in)'); end
-if ischar(in), in = cellstr(in); end
-out = in;
-if ischar(in{1})
-    out = strtrim(out);
-    out(cellfun('isempty', out)) = {'NaN'};
-    out = cellfun(@str2num, out, 'Uni', false);
-    out = cell2mat(out);
-elseif isnumeric(in{1})
-    out(cellfun('isempty', out)) = {NaN};
-    out = cell2mat(out);
-end
 end
