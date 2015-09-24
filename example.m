@@ -13,3 +13,4 @@ h   = figure;
 );
 mhgrid1 = pmerge(phandle, 1:3);
 mhgrid2 = pmerge(mhgrid1, 7:9);
+shpanel = psplit(mhgrid2, 2, 1, .005);
